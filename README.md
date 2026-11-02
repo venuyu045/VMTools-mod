@@ -146,6 +146,16 @@ bash tools/uipreview/serve.sh                # http://127.0.0.1:8765/ 交互
 
 MIT License
 
+## 相关项目
+
+Venus 的 Minecraft 模组/平台（同一套命名与工程规范）：
+
+| 项目 | 说明 |
+|---|---|
+| [VMFashion-mod](https://github.com/venuyu045/VMFashion-mod) | 纯客户端时装模组（Bedrock 3D 时装 / 云端衣柜） |
+| [VMPing-mod](https://github.com/venuyu045/VMPing-mod) | 纯客户端标点轮盘（中键标点，服务器零安装） |
+| [VMTools-Web](https://github.com/venuyu045/VMTools-Web) | Minecraft Bot 远程管理平台 + 时装/标点中继后端 |
+
 ## 链接
 
 - [GitHub](https://github.com/venuyu045/VMTools-mod)
