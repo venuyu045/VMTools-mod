@@ -1,5 +1,7 @@
 # Venus Mc Tools (VMTools)
 
+> 仓库：`VMTools-mod`（按 VMFashion 的命名规范，模组仓库统一带 `-mod` 后缀）
+
 轻量实用的 Minecraft Fabric 客户端模组，核心功能：路径点管理与快速传送、传送移动检测绕过、逃逸小工具。
 
 > 支持 Minecraft 1.21.11、1.21.6、26.1、26.2、26.3 五版本
@@ -52,7 +54,10 @@
 | 1.21.6 | `vmtools-mc1.21.6-4.0.2.jar` | 21+ | 0.16.14+ | 0.126.1+ |
 | 26.1 | `vmtools-mc26.1-4.0.2.jar` | 25+ | 0.19.2+ | 0.145.1+ |
 | 26.2 | `vmtools-mc26.2-4.0.2.jar` | 25+ | 0.19.3+ | 0.153.0+ |
-| 26.3 | `vmtools-mc26.3-4.0.2.jar` | 25+ | 0.20.1+ | 0.165.0+ |
+| 26.3 | `vmtools-mc26.3-4.1.0.jar` | 25+ | 0.20.1+ | 0.165.0+ |
+
+> 4.1.0 起界面改为**原版容器风格**，并附带无头 UI 预览器（见「开发」章节）。
+> 4.1.0 目前只出 26.3 版本；其余四个版本仍为 4.0.2，功能不受影响。
 
 ## 快捷键
 
@@ -143,5 +148,5 @@ MIT License
 
 ## 链接
 
-- [GitHub](https://github.com/venuyu045/VMTools)
-- [Releases](https://github.com/venuyu045/VMTools/releases)
+- [GitHub](https://github.com/venuyu045/VMTools-mod)
+- [Releases](https://github.com/venuyu045/VMTools-mod/releases)
