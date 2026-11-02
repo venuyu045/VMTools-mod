@@ -159,5 +159,5 @@ MIT License
 
 ## 🔗 链接
 
-- [GitHub 仓库](https://github.com/venuyu045/VMTools)
-- [Releases 下载](https://github.com/venuyu045/VMTools/releases)
+- [GitHub 仓库](https://github.com/venuyu045/VMTools-mod)
+- [Releases 下载](https://github.com/venuyu045/VMTools-mod/releases)
