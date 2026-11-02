@@ -7,7 +7,7 @@
 
 **VMTools (Venus Mc Tools)** 是一个 Minecraft Fabric 客户端模组，核心功能是路径点管理和快速传送。
 
-- **仓库**: https://github.com/venuyu045/VMTools
+- **仓库**: https://github.com/venuyu045/VMTools-mod
 - **作者**: Venus (venuyu045)
 - **许可证**: MIT
 - **环境**: 纯客户端模组（`environment: "client"`）
@@ -223,4 +223,4 @@ git add -A && git commit -m "feat: ..." && git push
 ```
 
 用户 GitHub: `venuyu045`
-仓库地址: `https://github.com/venuyu045/VMTools`
+仓库地址: `https://github.com/venuyu045/VMTools-mod`

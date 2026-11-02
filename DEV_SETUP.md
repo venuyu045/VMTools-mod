@@ -6,10 +6,10 @@
 
 | 项 | 值 |
 |---|---|
-| 仓库 | https://github.com/venuyu045/VMTools |
+| 仓库 | https://github.com/venuyu045/VMTools-mod |
 | 本地路径 | `/root/vmtools-mod` |
 | 当前分支 | `main`（MC 1.21.11） |
-| 远端 | `origin` → `https://github.com/venuyu045/VMTools.git` |
+| 远端 | `origin` → `https://github.com/venuyu045/VMTools-mod.git` |
 | 历史 | 完整（30 commits），4 个分支全部已 fetch |
 
 ### 分支与版本矩阵
