@@ -35,28 +35,44 @@ import java.util.Map;
 public class WaypointScreen extends Screen {
 
     // 窗口尺寸常量
+    /**
+     * 鼠标左键 / 右键编号。
+     *
+     * <p><b>MC 26.3 的鼠标事件由 SDL3 上报，按钮编号是 1-based（左 1 / 中 2 / 右 3）</b>，
+     * 不再是 GLFW 的 0/2/1。原版 {@code AbstractWidget#isValidClickButton} 的字节码就是
+     * {@code button() == 1}（javap 核对过）。旧代码按 0/1 判断，导致游戏里
+     * 「左键点路径点」被当成右键弹菜单、「右键」因为编号是 3 被直接丢弃。
+     */
+    private static final int LEFT_BUTTON = 1;
+    private static final int RIGHT_BUTTON = 3;
+
     private static final int WINDOW_WIDTH = 300; // 默认宽度，仅作为初始值
     private static final int TITLE_BAR_HEIGHT = 22;
     private static final int WAYPOINT_ROW_HEIGHT = 22;
     private static final int WAYPOINT_AREA_MAX_HEIGHT = 150;
     private static final int WINDOW_SPACING = 4;
+    /** 顶部搜索框底边（搜索框 y=28 + 高 18），分组窗口从这里下面开始排。 */
+    private static final int SEARCH_BOTTOM_Y = 46;
     private static final int BUTTON_HEIGHT = 20;
     private static final int PADDING = 8;
     private static final int DRAG_HANDLE_WIDTH = 14; // 拖拽手柄宽度
 
     // 颜色定义
-    private static final int PANEL_COLOR = 0xFF2D2D44;
-    private static final int HEADER_COLOR = 0xFF3D3D5C;
-    private static final int TEXT_COLOR = 0xFFE0E0E0;
-    private static final int ACCENT_COLOR = 0xFF7C3AED;
-    private static final int HOVER_COLOR = 0xFF4A4A6A;
-    private static final int SUCCESS_COLOR = 0xFF4ADE80;
-    private static final int DANGER_COLOR = 0xFFF87171;
-    private static final int SUBTLE_COLOR = 0xFF888888;
-    private static final int SCROLLBAR_COLOR = 0xFF5A5A7A;
-    private static final int SCROLLBAR_BG_COLOR = 0xFF1E1E2E;
-    private static final int DRAG_HANDLE_COLOR = 0xFF999999;
-    private static final int DROP_INDICATOR_COLOR = 0xFF7C3AED;
+    // 配色统一走 VanillaStyle 的原版色板（数值来自客户端 jar 的
+    // container/inventory.png 逐像素采样），与游戏内物品栏/箱子界面同一套语言。
+    private static final int PANEL_COLOR = VanillaStyle.PANEL_COLOR;
+    /** 标题栏与面板同色，靠"凸起"和分隔线区分（原版容器标题就是这么做的）。 */
+    private static final int HEADER_COLOR = VanillaStyle.PANEL_COLOR;
+    private static final int TEXT_COLOR = VanillaStyle.TEXT_COLOR;
+    private static final int ACCENT_COLOR = VanillaStyle.ACCENT_COLOR;
+    private static final int HOVER_COLOR = VanillaStyle.HOVER_COLOR;
+    private static final int SUCCESS_COLOR = VanillaStyle.SUCCESS_COLOR;
+    private static final int DANGER_COLOR = VanillaStyle.DANGER_COLOR;
+    private static final int SUBTLE_COLOR = VanillaStyle.MUTED_COLOR;
+    private static final int SCROLLBAR_COLOR = VanillaStyle.SCROLLBAR_COLOR;
+    private static final int SCROLLBAR_BG_COLOR = VanillaStyle.SCROLLBAR_BG_COLOR;
+    private static final int DRAG_HANDLE_COLOR = VanillaStyle.DRAG_HANDLE_COLOR;
+    private static final int DROP_INDICATOR_COLOR = VanillaStyle.ACCENT_COLOR;
 
     // 菜单类型
     private static final int MENU_TYPE_WAYPOINT = 0;
@@ -177,7 +193,8 @@ public class WaypointScreen extends Screen {
         int btnSpacing = 4;
         int totalBtnWidth = btnWidth * 6 + btnSpacing * 5;
         int btnStartX = centerX - totalBtnWidth / 2;
-        int btnY = this.height - 30;
+        // 底部按钮上移 6px：下面还要留一行"操作提示"，原先两者重叠
+        int btnY = this.height - 36;
 
         this.addRenderableWidget(Button.builder(
                 Component.literal("+ 路径点"),
@@ -270,15 +287,19 @@ public class WaypointScreen extends Screen {
      */
     private void updateWindowPositions() {
         int centerX = this.width / 2 - WINDOW_WIDTH / 2;
-        int startY = 30;
+        // 新窗口从"顶部快捷按钮 + 搜索框"下面开始（搜索框 y=28、高 18，到 46），
+        // 之后依次往下排。旧实现从 30 开始，窗口标题栏会被搜索框盖住。
+        int nextY = SEARCH_BOTTOM_Y + 6;
 
         for (WaypointGroup group : groups) {
             String groupId = group.getId();
-            if (!windowStates.containsKey(groupId)) {
+            GroupWindowState state = windowStates.get(groupId);
+
+            if (state == null) {
                 // 检查是否有已保存的状态
                 UIState.WindowState saved = uiState.getWindowState(groupId);
                 if (saved != null) {
-                    GroupWindowState state = new GroupWindowState(saved.x, saved.y);
+                    state = new GroupWindowState(saved.x, saved.y);
                     state.expanded = saved.expanded;
                     if (saved.width > 0) {
                         state.width = saved.width;
@@ -288,11 +309,23 @@ public class WaypointScreen extends Screen {
                         state.maxHeight = saved.maxHeight;
                         state.customHeight = true;
                     }
-                    windowStates.put(groupId, state);
                 } else {
-                    windowStates.put(groupId, new GroupWindowState(centerX, startY));
+                    // 首次出现的分组：接在已有窗口下方垂直排列。
+                    // 旧实现这里固定传 startY（从不递增），所有分组窗口都叠在 (centerX, 30)，
+                    // 玩家第一次打开界面看到的是一个"叠影"，必须手动一个个拖开才能用。
+                    state = new GroupWindowState(centerX, nextY);
+                    // 新分组默认展开：折叠态只露出标题栏，玩家第一次打开界面
+                    // 会以为"路径点没了"，必须逐个点开才能用。用户手动折叠过的状态
+                    // 会存进 UIState，下次仍按折叠恢复。
+                    state.expanded = true;
                 }
+                windowStates.put(groupId, state);
             }
+
+            // 让下一个新窗口接在当前窗口下方（已有窗口也要更新，否则新分组会盖住它）
+            int windowHeight = TITLE_BAR_HEIGHT
+                    + (state.expanded ? getWindowHeight(group, state) : 0);
+            nextY = Math.max(nextY, state.y + windowHeight + WINDOW_SPACING);
         }
     }
 
@@ -302,6 +335,32 @@ public class WaypointScreen extends Screen {
      * @param group 路径点分组
      * @return 计算后的窗口宽度（在 minWidth 和 maxWidth 之间）
      */
+    /**
+     * 按当前展开状态把所有分组窗口<b>重新垂直排列</b>（只重排 y，保留用户拖过的 x）。
+     *
+     * <p>折叠/展开会改变窗口高度。不重排的话，上面窗口一折叠，下面的窗口会留在原地，
+     * 中间空出一大块 —— 玩家会以为"窗口丢了"。窗口位置原本只在 {@code init()} 里算一次，
+     * 所以这个重排要在每次展开状态变化后主动调。
+     */
+    private void relayoutWindows() {
+        int nextY = SEARCH_BOTTOM_Y + 6;
+        for (String groupId : groupRenderOrder) {
+            WaypointGroup group = findGroupById(groupId);
+            GroupWindowState state = windowStates.get(groupId);
+            if (group == null || state == null) {
+                continue;
+            }
+            state.y = nextY;
+            if (!state.customWidth) {
+                state.width = calculateWindowWidth(group);
+            }
+            int windowHeight = TITLE_BAR_HEIGHT
+                    + (state.expanded ? getWindowHeight(group, state) : 0);
+            nextY += windowHeight + WINDOW_SPACING;
+        }
+        markUIStateDirty();
+    }
+
     private int calculateWindowWidth(WaypointGroup group) {
         int minWidth = 180;
         int maxWidth = 350;
@@ -327,7 +386,7 @@ public class WaypointScreen extends Screen {
     @Override
     public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         // 渲染分组窗口（按 groupRenderOrder 顺序，最后渲染的在最上层）
-        int autoLayoutY = 30;
+        int autoLayoutY = SEARCH_BOTTOM_Y + 6;
         int centerX = this.width / 2 - WINDOW_WIDTH / 2;
 
         for (String groupId : groupRenderOrder) {
@@ -425,14 +484,15 @@ public class WaypointScreen extends Screen {
             windowHeight += getWindowHeight(group, state);
         }
 
-        // 窗口背景
-        fillRoundedRect(context, x, y, w, windowHeight, PANEL_COLOR);
+        // 窗口背景：原版容器面板（黑外框 + 白高光 + 深灰阴影 + 像素圆角）
+        VanillaStyle.panel(context, x, y, w, windowHeight);
 
         // 标题栏
         boolean isTitleHovered = mouseX >= x && mouseX <= x + w &&
                 mouseY >= y && mouseY <= y + TITLE_BAR_HEIGHT;
+        // 标题栏：原版"凸起"块（悬停提亮一档），不用彩色条
         int titleBg = isTitleHovered ? HOVER_COLOR : HEADER_COLOR;
-        fillRoundedRect(context, x, y, w, TITLE_BAR_HEIGHT, titleBg);
+        VanillaStyle.bevel(context, x, y, w, TITLE_BAR_HEIGHT, titleBg, false);
 
         // 展开图标 + 色彩表情符号 + 分组名称 + 路径点数量
         String expandIcon = state.expanded ? "▼" : "▶";
@@ -448,13 +508,17 @@ public class WaypointScreen extends Screen {
         boolean isRightBorderHovered = mouseX >= x + w - RESIZE_HANDLE_SIZE && mouseX <= x + w + 2 &&
                 mouseY >= y && mouseY <= y + windowHeight;
         if (isRightBorderHovered || (resizingGroupId != null && resizingGroupId.equals(group.getId()) && resizingWidth)) {
-            context.fill(x + w - 1, y, x + w, y + windowHeight, 0x887C3AED);
+            context.fill(x + w - 1, y, x + w, y + windowHeight, 0x88373737);
         }
 
         // 展开的路径点列表
         if (state.expanded) {
             int contentY = y + TITLE_BAR_HEIGHT;
             int contentHeight = getWindowHeight(group, state);
+
+            // 内容区做成原版物品格那样的凹槽：面板是凸起的，列表是凹进去的，
+            // 层次一眼能分出来（旧实现整块同色，看不出哪里是"内容"）
+            VanillaStyle.slot(context, x + 1, contentY, w - 2, contentHeight);
 
             // 启用裁剪区域（防止绘制超出窗口内容区）
             context.enableScissor(x, contentY, x + w, contentY + contentHeight);
@@ -482,9 +546,10 @@ public class WaypointScreen extends Screen {
                         mouseY <= waypointY + WAYPOINT_ROW_HEIGHT && mouseY <= contentY + contentHeight;
 
                 // 路径点行背景
-                int wpBg = isWpHovered ? 0xFF3A3A55 : 0x00000000;
-                if (wpBg != 0x00000000 && !isDraggingThis) {
-                    fillRoundedRect(context, hoverStartX, waypointY, w - (hoverStartX - x) - 4, WAYPOINT_ROW_HEIGHT, wpBg);
+                // 路径点行：悬停时提亮一档（原版 hover 就是整体提亮，不加边框）
+                if (isWpHovered && !isDraggingThis) {
+                    context.fill(hoverStartX, waypointY,
+                            x + w - 4, waypointY + WAYPOINT_ROW_HEIGHT, HOVER_COLOR);
                 }
 
                 // 拖拽手柄区域
@@ -520,6 +585,12 @@ public class WaypointScreen extends Screen {
                 drawText(context, wp.getColor().getEmoji() + " " + wp.getName(),
                         nameX, waypointY + 4, textColor);
 
+                // 行间分隔线：1px 深灰（原版容器里列表项之间就是这种细线，
+                // 不加的话整块 #8B8B8B 会糊成一片，看不出有几行）
+                context.fill(x + PADDING, waypointY + WAYPOINT_ROW_HEIGHT,
+                        x + w - PADDING, waypointY + WAYPOINT_ROW_HEIGHT + 1,
+                        VanillaStyle.SLOT_BORDER);
+
                 waypointY += WAYPOINT_ROW_HEIGHT + 2;
             }
 
@@ -537,7 +608,7 @@ public class WaypointScreen extends Screen {
                     mouseY >= bottomY - RESIZE_HANDLE_SIZE && mouseY <= bottomY + 2;
             boolean isResizingThis = resizingGroupId != null && resizingGroupId.equals(group.getId()) && !resizingWidth;
             if (isBottomHovered || isResizingThis) {
-                context.fill(x + 2, bottomY - 2, x + w - 2, bottomY, 0x887C3AED);
+                context.fill(x + 2, bottomY - 2, x + w - 2, bottomY, 0x88373737);
             }
         }
     }
@@ -607,10 +678,12 @@ public class WaypointScreen extends Screen {
         // 滚动条背景
         context.fill(x, y, x + width, y + height, SCROLLBAR_BG_COLOR);
 
-        // 滚动条滑块
+        // 滚动条滑块（原版 #C0C0C0，配 1px 深色描边，否则在黑色轨道上看不出边界）
         int thumbHeight = Math.max(10, (int) ((float) height / (state.maxScroll + height) * height));
         int thumbY = y + (int) ((float) state.scrollOffset / state.maxScroll * (height - thumbHeight));
         context.fill(x, thumbY, x + width, thumbY + thumbHeight, SCROLLBAR_COLOR);
+        context.fill(x, thumbY, x + width, thumbY + 1, VanillaStyle.PANEL_SHADOW);
+        context.fill(x, thumbY + thumbHeight - 1, x + width, thumbY + thumbHeight, VanillaStyle.PANEL_SHADOW);
     }
 
     /**
@@ -638,8 +711,9 @@ public class WaypointScreen extends Screen {
         int menuY = Math.min(contextMenuY, this.height - menuHeight - 5);
 
         // 菜单背景
-        fillRoundedRect(context, menuX, menuY, menuWidth, menuHeight, 0xFF1E1E2E);
-        context.fill(menuX + 1, menuY + 1, menuX + menuWidth - 1, menuY + menuHeight - 1, 0xFF2D2D44);
+        // 右键菜单：原版容器面板
+        VanillaStyle.panel(context, menuX, menuY, menuWidth, menuHeight);
+        context.fill(menuX + 1, menuY + 1, menuX + menuWidth - 1, menuY + menuHeight - 1, VanillaStyle.PANEL_COLOR);
 
         for (int i = 0; i < menuItems; i++) {
             int itemY = menuY + 2 + i * menuItemHeight;
@@ -662,7 +736,7 @@ public class WaypointScreen extends Screen {
 
         // 右键菜单处理
         if (showContextMenu) {
-            if (button == 0) { // 左键点击菜单项
+            if (button == LEFT_BUTTON) { // 左键点击菜单项
                 handleContextMenuClick((int) mouseX, (int) mouseY);
                 showContextMenu = false;
                 return true;
@@ -673,7 +747,7 @@ public class WaypointScreen extends Screen {
         }
 
         // 左键和右键都处理
-        if (button != 0 && button != 1) return super.mouseClicked(event, doubleClick);
+        if (button != LEFT_BUTTON && button != RIGHT_BUTTON) return super.mouseClicked(event, doubleClick);
 
         // 检查是否点击了分组窗口（按渲染顺序反向遍历，优先处理最上层的窗口）
         for (int gi = groupRenderOrder.size() - 1; gi >= 0; gi--) {
@@ -701,7 +775,7 @@ public class WaypointScreen extends Screen {
             }
 
             // 右边框宽度拖拽
-            if (button == 0 && mouseX >= x + w - RESIZE_HANDLE_SIZE && mouseX <= x + w + 2 &&
+            if (button == LEFT_BUTTON && mouseX >= x + w - RESIZE_HANDLE_SIZE && mouseX <= x + w + 2 &&
                     mouseY >= y && mouseY <= y + windowHeight) {
                 resizingGroupId = group.getId();
                 resizingWidth = true;
@@ -712,7 +786,7 @@ public class WaypointScreen extends Screen {
             }
 
             // 底部边框高度拖拽
-            if (state.expanded && button == 0 &&
+            if (state.expanded && button == LEFT_BUTTON &&
                     mouseX >= x && mouseX <= x + w &&
                     mouseY >= y + windowHeight - RESIZE_HANDLE_SIZE && mouseY <= y + windowHeight + 2) {
                 resizingGroupId = group.getId();
@@ -727,7 +801,7 @@ public class WaypointScreen extends Screen {
             if (mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + windowHeight) {
                 // 点击标题栏
                 if (mouseY <= y + TITLE_BAR_HEIGHT) {
-                    if (button == 0) { // 左键：开始拖拽（或作为点击处理）
+                    if (button == LEFT_BUTTON) { // 左键：开始拖拽（或作为点击处理）
                         draggingGroupId = group.getId();
                         dragOffsetX = (int) mouseX - x;
                         dragOffsetY = (int) mouseY - y;
@@ -735,7 +809,7 @@ public class WaypointScreen extends Screen {
                         dragStartMouseY = mouseY;
                         bringGroupToFront(group.getId());
                         return true;
-                    } else if (button == 1) { // 右键显示分组菜单
+                    } else if (button == RIGHT_BUTTON) { // 右键显示分组菜单
                         showContextMenu = true;
                         contextMenuType = MENU_TYPE_GROUP;
                         contextMenuX = (int) mouseX;
@@ -773,7 +847,7 @@ public class WaypointScreen extends Screen {
                             // 检查是否点击了拖拽手柄区域
                             int handleX = x + PADDING;
                             int handleRight = handleX + DRAG_HANDLE_WIDTH;
-                            if (button == 0 && mouseX >= handleX && mouseX <= handleRight) {
+                            if (button == LEFT_BUTTON && mouseX >= handleX && mouseX <= handleRight) {
                                 // 开始追踪路径点拖拽（不立即开始拖拽，等超过阈值）
                                 wpDragTracking = true;
                                 wpDragStartMouseX = mouseX;
@@ -785,13 +859,13 @@ public class WaypointScreen extends Screen {
                             }
 
                             // 左键点击路径点名称区域 - 传送
-                            if (button == 0 && mouseX >= nameX) {
+                            if (button == LEFT_BUTTON && mouseX >= nameX) {
                                 executeTeleport(wp);
                                 return true;
                             }
 
                             // 右键点击路径点 - 显示菜单
-                            if (button == 1) {
+                            if (button == RIGHT_BUTTON) {
                                 showContextMenu = true;
                                 contextMenuType = MENU_TYPE_WAYPOINT;
                                 contextMenuX = (int) mouseX;
@@ -807,7 +881,7 @@ public class WaypointScreen extends Screen {
                 }
 
                 // 点击了窗口内部但不是任何交互元素，仍然将其提升到前面
-                if (button == 1) {
+                if (button == RIGHT_BUTTON) {
                     bringGroupToFront(group.getId());
                 }
                 return true;
@@ -826,7 +900,7 @@ public class WaypointScreen extends Screen {
         int button = event.button();
 
         // 路径点拖拽追踪处理
-        if (wpDragTracking && button == 0) {
+        if (wpDragTracking && button == LEFT_BUTTON) {
             double distX = Math.abs(mouseX - wpDragStartMouseX);
             double distY = Math.abs(mouseY - wpDragStartMouseY);
             if (distX > DRAG_THRESHOLD || distY > DRAG_THRESHOLD) {
@@ -838,7 +912,7 @@ public class WaypointScreen extends Screen {
         }
 
         // 正式路径点拖拽进行中
-        if (draggingWpId != null && button == 0) {
+        if (draggingWpId != null && button == LEFT_BUTTON) {
             // 计算当前鼠标悬浮的目标索引（基于可见路径点）
             WaypointGroup group = findGroupById(draggingWpGroupId);
             GroupWindowState state = windowStates.get(draggingWpGroupId);
@@ -856,7 +930,7 @@ public class WaypointScreen extends Screen {
         }
 
         // 分组窗口尺寸调整
-        if (resizingGroupId != null && button == 0) {
+        if (resizingGroupId != null && button == LEFT_BUTTON) {
             GroupWindowState state = windowStates.get(resizingGroupId);
             if (state != null) {
                 if (resizingWidth) {
@@ -873,7 +947,7 @@ public class WaypointScreen extends Screen {
         }
 
         // 分组窗口拖拽
-        if (draggingGroupId != null && button == 0) {
+        if (draggingGroupId != null && button == LEFT_BUTTON) {
             GroupWindowState state = windowStates.get(draggingGroupId);
             if (state != null) {
                 state.x = (int) mouseX - dragOffsetX;
@@ -894,7 +968,7 @@ public class WaypointScreen extends Screen {
         int button = event.button();
 
         // 路径点拖拽释放
-        if (button == 0 && (draggingWpId != null || wpDragTracking)) {
+        if (button == LEFT_BUTTON && (draggingWpId != null || wpDragTracking)) {
             if (wpDragTracking) {
                 // 未超过阈值，视为点击（不做任何操作，恢复追踪状态）
                 wpDragTracking = false;
@@ -929,14 +1003,14 @@ public class WaypointScreen extends Screen {
         }
 
         // 宽度调整释放
-        if (button == 0 && resizingGroupId != null) {
+        if (button == LEFT_BUTTON && resizingGroupId != null) {
             resizingGroupId = null;
             markUIStateDirty();
             return true;
         }
 
         // 分组窗口拖拽释放
-        if (draggingGroupId != null && button == 0) {
+        if (draggingGroupId != null && button == LEFT_BUTTON) {
             // 判断是点击还是拖拽：移动距离小于阈值则视为点击（切换展开/折叠）
             double distX = Math.abs(mouseX - dragStartMouseX);
             double distY = Math.abs(mouseY - dragStartMouseY);
@@ -946,7 +1020,7 @@ public class WaypointScreen extends Screen {
                 if (state != null) {
                     state.expanded = !state.expanded;
                     state.scrollOffset = 0;
-                    markUIStateDirty();
+                    relayoutWindows();
                 }
             }
             draggingGroupId = null;
@@ -1036,6 +1110,7 @@ public class WaypointScreen extends Screen {
                             if (contextMenuGroup != null && state != null) {
                                 state.expanded = !state.expanded;
                                 state.scrollOffset = 0;
+                                relayoutWindows();
                             }
                             break;
                         case 1: // 编辑
@@ -1370,18 +1445,19 @@ public class WaypointScreen extends Screen {
 
     // ==================== 绘制工具方法 ====================
 
-    private void fillRoundedRect(GuiGraphicsExtractor context, int x, int y, int width, int height, int color) {
-        context.fill(x + 2, y, x + width - 2, y + height, color);
-        context.fill(x, y + 2, x + width, y + height - 2, color);
-    }
-
+    /**
+     * 画一行文字（<b>不带阴影</b>）。
+     *
+     * <p>原版阴影色是"颜色除以 4"，{@code #404040} 的阴影接近纯黑 —— 压在
+     * {@code #C6C6C6} 浅灰面板上会糊成一团脏边。原版在浅色容器底上写字同样不带阴影。
+     */
     private void drawText(GuiGraphicsExtractor context, String text, int x, int y, int color) {
-        context.text(this.font, text, x, y, color);
+        context.text(this.font, text, x, y, color, false);
     }
 
     private void drawCenteredText(GuiGraphicsExtractor context, String text, int centerX, int y, int color) {
         int textWidth = this.font.width(text);
-        context.text(this.font, text, centerX - textWidth / 2, y, color);
+        context.text(this.font, text, centerX - textWidth / 2, y, color, false);
     }
 
     @Override

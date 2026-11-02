@@ -96,14 +96,24 @@ public class SettingsScreen extends Screen {
     @Override
     public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         // 半透明背景
-        context.fill(0, 0, this.width, this.height, 0xC0000000);
+        context.fill(0, 0, this.width, this.height, VanillaStyle.OVERLAY_COLOR);
 
         int centerX = this.width / 2;
 
-        // 标题
+        // 原版容器面板：设置项都画在面板上，标题在面板内 —— 否则深灰文字直接压在
+        // 半透明黑遮罩上会几乎看不见（旧实现就是这样）
+        int panelWidth = Math.min(320, this.width - 40);
+        int panelX = centerX - panelWidth / 2;
+        int panelY = 20;
+        // 高度留到"返回保存"按钮下面（按钮 y = height-30、高 20），否则按钮会落在面板外
+        int panelHeight = Math.max(120, this.height - 44);
+        VanillaStyle.panel(context, panelX, panelY, panelWidth, panelHeight);
+        VanillaStyle.separator(context, panelX + 1, panelX + panelWidth - 1, panelY + 22);
+
+        // 标题（面板内居中）
         String title = "VMTools 设置";
         int titleWidth = this.font.width(title);
-        context.text(this.font, title, centerX - titleWidth / 2, 15, 0xFF7C3AED);
+        context.text(this.font, title, centerX - titleWidth / 2, panelY + 7, VanillaStyle.TEXT_COLOR, false);
 
         // 说明文字
         if (config.isAutoConfirmTeleport()) {
@@ -111,9 +121,9 @@ public class SettingsScreen extends Screen {
             String line1 = "开启后，点击传送会自动执行确认命令";
             String line2 = "例：传送后自动执行 /res tpconfirm";
             String line3 = "命令不需要带 / 前缀";
-            context.text(this.font, line1, centerX - this.font.width(line1) / 2, infoY, 0xFF888888);
-            context.text(this.font, line2, centerX - this.font.width(line2) / 2, infoY + 14, 0xFF888888);
-            context.text(this.font, line3, centerX - this.font.width(line3) / 2, infoY + 28, 0xFF888888);
+            context.text(this.font, line1, centerX - this.font.width(line1) / 2, infoY, VanillaStyle.MUTED_COLOR);
+            context.text(this.font, line2, centerX - this.font.width(line2) / 2, infoY + 14, VanillaStyle.MUTED_COLOR);
+            context.text(this.font, line3, centerX - this.font.width(line3) / 2, infoY + 28, VanillaStyle.MUTED_COLOR);
         }
 
         super.extractRenderState(context, mouseX, mouseY, delta);

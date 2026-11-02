@@ -18,10 +18,10 @@ public class ConfirmScreen extends Screen {
     private static final int PANEL_HEIGHT = 100;
 
     // 颜色
-    private static final int PANEL_COLOR = 0xFF2D2D44;
-    private static final int HEADER_COLOR = 0xFF3D3D5C;
-    private static final int TEXT_COLOR = 0xFFE0E0E0;
-    private static final int DANGER_COLOR = 0xFFF87171;
+    private static final int PANEL_COLOR = VanillaStyle.PANEL_COLOR;
+    private static final int HEADER_COLOR = VanillaStyle.PANEL_COLOR;
+    private static final int TEXT_COLOR = VanillaStyle.TEXT_COLOR;
+    private static final int DANGER_COLOR = VanillaStyle.DANGER_COLOR;
 
     private final Screen parent;
     private final String title;
@@ -95,10 +95,10 @@ public class ConfirmScreen extends Screen {
         int panelY = centerY - PANEL_HEIGHT / 2;
 
         // 面板背景
-        fillRoundedRect(context, panelX, panelY, PANEL_WIDTH, PANEL_HEIGHT, PANEL_COLOR);
+        VanillaStyle.panel(context, panelX, panelY, PANEL_WIDTH, PANEL_HEIGHT);
 
         // 头部
-        fillRoundedRect(context, panelX, panelY, PANEL_WIDTH, 25, HEADER_COLOR);
+        VanillaStyle.bevel(context, panelX, panelY, PANEL_WIDTH, 25, HEADER_COLOR, false);
         drawCenteredText(context, title, centerX, panelY + 7, DANGER_COLOR);
 
         // 消息
@@ -123,14 +123,9 @@ public class ConfirmScreen extends Screen {
     }
 
     // 绘制工具
-    private void fillRoundedRect(GuiGraphicsExtractor context, int x, int y, int width, int height, int color) {
-        context.fill(x + 2, y, x + width - 2, y + height, color);
-        context.fill(x, y + 2, x + width, y + height - 2, color);
-    }
-
     private void drawCenteredText(GuiGraphicsExtractor context, String text, int centerX, int y, int color) {
         int textWidth = this.font.width(text);
-        context.text(this.font, text, centerX - textWidth / 2, y, color);
+        context.text(this.font, text, centerX - textWidth / 2, y, color, false);
     }
 
     @Override

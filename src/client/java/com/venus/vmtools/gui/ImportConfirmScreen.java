@@ -22,13 +22,13 @@ public class ImportConfirmScreen extends Screen {
     private static final int PANEL_HEIGHT = 180;
 
     // 颜色
-    private static final int PANEL_COLOR = 0xFF2D2D44;
-    private static final int HEADER_COLOR = 0xFF3D3D5C;
-    private static final int TEXT_COLOR = 0xFFE0E0E0;
-    private static final int ACCENT_COLOR = 0xFF7C3AED;
-    private static final int SUCCESS_COLOR = 0xFF4ADE80;
-    private static final int WARNING_COLOR = 0xFFFBBF24;
-    private static final int DANGER_COLOR = 0xFFF87171;
+    private static final int PANEL_COLOR = VanillaStyle.PANEL_COLOR;
+    private static final int HEADER_COLOR = VanillaStyle.PANEL_COLOR;
+    private static final int TEXT_COLOR = VanillaStyle.TEXT_COLOR;
+    private static final int ACCENT_COLOR = VanillaStyle.ACCENT_COLOR;
+    private static final int SUCCESS_COLOR = VanillaStyle.SUCCESS_COLOR;
+    private static final int WARNING_COLOR = VanillaStyle.ACCENT_COLOR;
+    private static final int DANGER_COLOR = VanillaStyle.DANGER_COLOR;
 
     private final Screen parent;
     private final List<WaypointGroup> importGroups;
@@ -90,10 +90,10 @@ public class ImportConfirmScreen extends Screen {
         int panelY = centerY - PANEL_HEIGHT / 2;
 
         // 面板背景
-        fillRoundedRect(context, panelX, panelY, PANEL_WIDTH, PANEL_HEIGHT, PANEL_COLOR);
+        VanillaStyle.panel(context, panelX, panelY, PANEL_WIDTH, PANEL_HEIGHT);
 
         // 头部
-        fillRoundedRect(context, panelX, panelY, PANEL_WIDTH, 25, HEADER_COLOR);
+        VanillaStyle.bevel(context, panelX, panelY, PANEL_WIDTH, 25, HEADER_COLOR, false);
         drawCenteredText(context, "确认导入", centerX, panelY + 7, TEXT_COLOR);
 
         int contentY = panelY + 35;
@@ -122,14 +122,14 @@ public class ImportConfirmScreen extends Screen {
 
         if (importGroups.size() > 3) {
             drawCenteredText(context, "... 还有 " + (importGroups.size() - 3) + " 个分组",
-                    centerX, contentY, 0xFF888888);
+                    centerX, contentY, VanillaStyle.MUTED_COLOR);
             contentY += 15;
         }
 
         contentY += 10;
 
         // 导入模式说明
-        drawCenteredText(context, "追加导入: 保留现有数据，添加新路径点", centerX, contentY, 0xFF888888);
+        drawCenteredText(context, "追加导入: 保留现有数据，添加新路径点", centerX, contentY, VanillaStyle.MUTED_COLOR);
         contentY += 15;
         drawCenteredText(context, "替换全部: 清空现有数据，只保留导入的数据", centerX, contentY, DANGER_COLOR);
 
@@ -168,14 +168,9 @@ public class ImportConfirmScreen extends Screen {
     }
 
     // 绘制工具
-    private void fillRoundedRect(GuiGraphicsExtractor context, int x, int y, int width, int height, int color) {
-        context.fill(x + 2, y, x + width - 2, y + height, color);
-        context.fill(x, y + 2, x + width, y + height - 2, color);
-    }
-
     private void drawCenteredText(GuiGraphicsExtractor context, String text, int centerX, int y, int color) {
         int textWidth = this.font.width(text);
-        context.text(this.font, text, centerX - textWidth / 2, y, color);
+        context.text(this.font, text, centerX - textWidth / 2, y, color, false);
     }
 
     @Override

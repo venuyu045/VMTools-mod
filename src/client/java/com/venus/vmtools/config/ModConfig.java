@@ -25,17 +25,18 @@ public class ModConfig {
         public static final int BUTTON_HEIGHT = 20;
         public static final int PADDING = 8;
 
-        // 颜色定义
-        public static final int BG_COLOR = 0xFF1E1E2E;
-        public static final int PANEL_COLOR = 0xFF2D2D44;
-        public static final int HEADER_COLOR = 0xFF3D3D5C;
-        public static final int TEXT_COLOR = 0xFFE0E0E0;
-        public static final int ACCENT_COLOR = 0xFF7C3AED;
-        public static final int HOVER_COLOR = 0xFF4A4A6A;
-        public static final int SUCCESS_COLOR = 0xFF4ADE80;
-        public static final int DANGER_COLOR = 0xFFF87171;
-        public static final int BORDER_COLOR = 0xFF4A4A6A;
-        public static final int MUTED_COLOR = 0xFF888888;
+        // 颜色定义：原版容器界面色板（数值来自客户端 jar 的
+        // container/inventory.png 逐像素采样，与 gui/VanillaStyle 保持一致）。
+        // 界面实际用 VanillaStyle 的常量，这里保留一份给"非界面代码"取色。
+        public static final int PANEL_COLOR = 0xFFC6C6C6;
+        public static final int HEADER_COLOR = 0xFFC6C6C6;
+        public static final int TEXT_COLOR = 0xFF404040;
+        public static final int ACCENT_COLOR = 0xFF373737;
+        public static final int HOVER_COLOR = 0xFFD6D6D6;
+        public static final int SUCCESS_COLOR = 0xFF2E7D32;
+        public static final int DANGER_COLOR = 0xFFB71C1C;
+        public static final int MUTED_COLOR = 0xFF5A5A5A;
+        public static final int BORDER_COLOR = 0xFF373737;
 
         // Toast 通知
         public static final int TOAST_WIDTH = 200;

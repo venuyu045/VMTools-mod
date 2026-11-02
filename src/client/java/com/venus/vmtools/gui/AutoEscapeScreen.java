@@ -27,15 +27,15 @@ import java.util.List;
 public class AutoEscapeScreen extends Screen {
 
     // 颜色
-    private static final int BG_COLOR = 0xCC000000;
-    private static final int PANEL_COLOR = 0xFF2D2D44;
-    private static final int HEADER_COLOR = 0xFF3D3D5C;
-    private static final int TEXT_COLOR = 0xFFE0E0E0;
-    private static final int ACCENT_COLOR = 0xFF7C3AED;
-    private static final int SUBTLE_COLOR = 0xFF888888;
-    private static final int SUCCESS_COLOR = 0xFF4ADE80;
-    private static final int DANGER_COLOR = 0xFFF87171;
-    private static final int HOVER_COLOR = 0xFF4A4A6A;
+    private static final int BG_COLOR = VanillaStyle.OVERLAY_COLOR;
+    private static final int PANEL_COLOR = VanillaStyle.PANEL_COLOR;
+    private static final int HEADER_COLOR = VanillaStyle.PANEL_COLOR;
+    private static final int TEXT_COLOR = VanillaStyle.TEXT_COLOR;
+    private static final int ACCENT_COLOR = VanillaStyle.ACCENT_COLOR;
+    private static final int SUBTLE_COLOR = VanillaStyle.MUTED_COLOR;
+    private static final int SUCCESS_COLOR = VanillaStyle.SUCCESS_COLOR;
+    private static final int DANGER_COLOR = VanillaStyle.DANGER_COLOR;
+    private static final int HOVER_COLOR = VanillaStyle.HOVER_COLOR;
 
     // Tab 栏
     private static final int TAB_H = 22;
@@ -245,7 +245,7 @@ public class AutoEscapeScreen extends Screen {
             boolean rightH = mouseX >= win.x + win.w - RESIZE_ZONE && mouseX <= win.x + win.w &&
                     mouseY >= win.y && mouseY <= win.y + totalH;
             if (rightH || (resizeWinIdx == i && resizeRight))
-                context.fill(win.x + win.w - 1, win.y, win.x + win.w, win.y + totalH, 0x887C3AED);
+                context.fill(win.x + win.w - 1, win.y, win.x + win.w, win.y + totalH, 0x88373737);
 
             if (win.expanded) {
                 context.fill(win.x, win.y + TITLE_BAR_H, win.x + win.w, win.y + totalH, PANEL_COLOR);
@@ -269,7 +269,7 @@ public class AutoEscapeScreen extends Screen {
                 boolean bottomH = mouseX >= win.x && mouseX <= win.x + win.w &&
                         mouseY >= bottomY - RESIZE_ZONE && mouseY <= bottomY;
                 if (bottomH || (resizeWinIdx == i && resizeBottom))
-                    context.fill(win.x + 2, bottomY - 1, win.x + win.w - 2, bottomY, 0x887C3AED);
+                    context.fill(win.x + 2, bottomY - 1, win.x + win.w - 2, bottomY, 0x88373737);
             }
         }
     }
@@ -304,7 +304,7 @@ public class AutoEscapeScreen extends Screen {
         y += LINE_H + 12;
 
         // 日志
-        context.fill(rx, y, rx + rw, y + 1, 0xFF3D3D5C);
+        context.fill(rx, y, rx + rw, y + 1, VanillaStyle.PANEL_COLOR);
         drawText(context, "触发日志", rx, y + 3, SUBTLE_COLOR);
         y += LINE_H;
         renderLog(context, AutoEscapeManager.getInstance().getLogEntries(), voidLogScroll, rx, y, rw);
@@ -336,7 +336,7 @@ public class AutoEscapeScreen extends Screen {
         }
         y += LINE_H + 12;
 
-        context.fill(rx, y, rx + rw, y + 1, 0xFF3D3D5C);
+        context.fill(rx, y, rx + rw, y + 1, VanillaStyle.PANEL_COLOR);
         drawText(context, "触发日志", rx, y + 3, SUBTLE_COLOR);
         y += LINE_H;
         renderLog(context, HealthMonitorManager.getInstance().getLogEntries(), healthLogScroll, rx, y, rw);
@@ -558,11 +558,11 @@ public class AutoEscapeScreen extends Screen {
     }
 
     private void drawText(GuiGraphicsExtractor context, String text, int x, int y, int color) {
-        context.text(this.font, text, x, y, color);
+        context.text(this.font, text, x, y, color, false);
     }
 
     private void drawCentered(GuiGraphicsExtractor context, String text, int centerX, int y, int color) {
         int w = this.font.width(text);
-        context.text(this.font, text, centerX - w / 2, y, color);
+        context.text(this.font, text, centerX - w / 2, y, color, false);
     }
 }

@@ -22,12 +22,12 @@ public class EditGroupScreen extends Screen {
     private static final int PADDING = 12;
 
     // 颜色定义
-    private static final int PANEL_COLOR = 0xFF2D2D44;
-    private static final int HEADER_COLOR = 0xFF3D3D5C;
-    private static final int TEXT_COLOR = 0xFFE0E0E0;
-    private static final int ACCENT_COLOR = 0xFF7C3AED;
-    private static final int SUBTLE_COLOR = 0xFF888888;
-    private static final int HOVER_COLOR = 0xFF4A4A6A;
+    private static final int PANEL_COLOR = VanillaStyle.PANEL_COLOR;
+    private static final int HEADER_COLOR = VanillaStyle.PANEL_COLOR;
+    private static final int TEXT_COLOR = VanillaStyle.TEXT_COLOR;
+    private static final int ACCENT_COLOR = VanillaStyle.ACCENT_COLOR;
+    private static final int SUBTLE_COLOR = VanillaStyle.MUTED_COLOR;
+    private static final int HOVER_COLOR = VanillaStyle.HOVER_COLOR;
 
     private final WaypointScreen parentScreen;
     private final WaypointGroup editingGroup;
@@ -94,7 +94,7 @@ public class EditGroupScreen extends Screen {
     @Override
     public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         // 半透明背景
-        context.fill(0, 0, this.width, this.height, 0xCC000000);
+        context.fill(0, 0, this.width, this.height, VanillaStyle.OVERLAY_COLOR);
 
         int centerX = this.width / 2;
         int centerY = this.height / 2;
@@ -102,10 +102,10 @@ public class EditGroupScreen extends Screen {
         int panelY = centerY - PANEL_HEIGHT / 2;
 
         // 面板背景
-        fillRoundedRect(context, panelX, panelY, PANEL_WIDTH, PANEL_HEIGHT, PANEL_COLOR);
+        VanillaStyle.panel(context, panelX, panelY, PANEL_WIDTH, PANEL_HEIGHT);
 
         // 头部
-        fillRoundedRect(context, panelX, panelY, PANEL_WIDTH, 25, HEADER_COLOR);
+        VanillaStyle.bevel(context, panelX, panelY, PANEL_WIDTH, 25, HEADER_COLOR, false);
         String title = isEditMode ? "编辑分组" : "添加新分组";
         drawCenteredText(context, title, centerX, panelY + 7, ACCENT_COLOR);
 
@@ -137,8 +137,8 @@ public class EditGroupScreen extends Screen {
             boolean isSelected = colors[i] == selectedColor;
 
             // 背景
-            int bgColor = isHovered ? HOVER_COLOR : 0xFF1E1E2E;
-            fillRoundedRect(context, x, y, COLOR_SIZE, COLOR_SIZE, bgColor);
+            int bgColor = isHovered ? HOVER_COLOR : VanillaStyle.SLOT_COLOR;
+            context.fill( x, y, COLOR_SIZE, COLOR_SIZE, bgColor);
 
             // 颜色方块（居中，留边距）
             int innerSize = COLOR_SIZE - 6;
@@ -165,7 +165,8 @@ public class EditGroupScreen extends Screen {
         int button = event.button();
 
         // 左键点击颜色选择器
-        if (button == 0) {
+        // 左键编号 = 1（MC 26.3 用 SDL3，1-based；旧代码写 0 会让左键点不动）
+        if (button == 1) {
             WaypointColor[] colors = WaypointColor.values();
             for (int i = 0; i < colors.length; i++) {
                 int x = colorPickerX + i * (COLOR_SIZE + COLOR_SPACING);
@@ -219,11 +220,6 @@ public class EditGroupScreen extends Screen {
 
     // ==================== 绘制工具方法 ====================
 
-    private void fillRoundedRect(GuiGraphicsExtractor context, int x, int y, int width, int height, int color) {
-        context.fill(x + 2, y, x + width - 2, y + height, color);
-        context.fill(x, y + 2, x + width, y + height - 2, color);
-    }
-
     private void drawBorder(GuiGraphicsExtractor context, int x, int y, int width, int height, int color) {
         context.fill(x, y, x + width, y + 2, color);
         context.fill(x, y + height - 2, x + width, y + height, color);
@@ -232,12 +228,12 @@ public class EditGroupScreen extends Screen {
     }
 
     private void drawText(GuiGraphicsExtractor context, String text, int x, int y, int color) {
-        context.text(this.font, text, x, y, color);
+        context.text(this.font, text, x, y, color, false);
     }
 
     private void drawCenteredText(GuiGraphicsExtractor context, String text, int centerX, int y, int color) {
         int textWidth = this.font.width(text);
-        context.text(this.font, text, centerX - textWidth / 2, y, color);
+        context.text(this.font, text, centerX - textWidth / 2, y, color, false);
     }
 
     @Override

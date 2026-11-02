@@ -32,12 +32,12 @@ public class EditWaypointScreen extends Screen {
     private static final int COMMAND_MAX_LENGTH = com.venus.vmtools.feature.waypoint.TeleportService.MAX_COMMAND_LENGTH;
 
     // 颜色定义
-    private static final int PANEL_COLOR = 0xFF2D2D44;
-    private static final int HEADER_COLOR = 0xFF3D3D5C;
-    private static final int TEXT_COLOR = 0xFFE0E0E0;
-    private static final int ACCENT_COLOR = 0xFF7C3AED;
-    private static final int SUBTLE_COLOR = 0xFF888888;
-    private static final int HOVER_COLOR = 0xFF4A4A6A;
+    private static final int PANEL_COLOR = VanillaStyle.PANEL_COLOR;
+    private static final int HEADER_COLOR = VanillaStyle.PANEL_COLOR;
+    private static final int TEXT_COLOR = VanillaStyle.TEXT_COLOR;
+    private static final int ACCENT_COLOR = VanillaStyle.ACCENT_COLOR;
+    private static final int SUBTLE_COLOR = VanillaStyle.MUTED_COLOR;
+    private static final int HOVER_COLOR = VanillaStyle.HOVER_COLOR;
 
     private final WaypointScreen parentScreen;
     private final Waypoint editingWaypoint;
@@ -184,7 +184,7 @@ public class EditWaypointScreen extends Screen {
     @Override
     public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         // 半透明背景
-        context.fill(0, 0, this.width, this.height, 0xCC000000);
+        context.fill(0, 0, this.width, this.height, VanillaStyle.OVERLAY_COLOR);
 
         int centerX = this.width / 2;
         int centerY = this.height / 2;
@@ -192,10 +192,10 @@ public class EditWaypointScreen extends Screen {
         int panelY = centerY - PANEL_HEIGHT / 2;
 
         // 面板背景
-        fillRoundedRect(context, panelX, panelY, PANEL_WIDTH, PANEL_HEIGHT, PANEL_COLOR);
+        VanillaStyle.panel(context, panelX, panelY, PANEL_WIDTH, PANEL_HEIGHT);
 
         // 头部
-        fillRoundedRect(context, panelX, panelY, PANEL_WIDTH, 25, HEADER_COLOR);
+        VanillaStyle.bevel(context, panelX, panelY, PANEL_WIDTH, 25, HEADER_COLOR, false);
         String title = isEditMode ? "编辑路径点" : "添加新路径点";
         drawCenteredText(context, title, centerX, panelY + 7, ACCENT_COLOR);
 
@@ -285,17 +285,17 @@ public class EditWaypointScreen extends Screen {
                     mouseY >= itemY && mouseY <= itemY + SUGGESTION_ITEM_HEIGHT;
 
             if (isSelected) {
-                context.fill(sugX, itemY, sugX + sugW, itemY + SUGGESTION_ITEM_HEIGHT, 0xFF3D3D5C);
+                context.fill(sugX, itemY, sugX + sugW, itemY + SUGGESTION_ITEM_HEIGHT, VanillaStyle.PANEL_COLOR);
             } else if (isHovered) {
-                context.fill(sugX, itemY, sugX + sugW, itemY + SUGGESTION_ITEM_HEIGHT, 0xFF2D2D44);
+                context.fill(sugX, itemY, sugX + sugW, itemY + SUGGESTION_ITEM_HEIGHT, VanillaStyle.PANEL_COLOR);
             }
 
-            int textColor = isSelected ? 0xFF4ADE80 : 0xFFCCCCCC;
+            int textColor = isSelected ? VanillaStyle.SUCCESS_COLOR : 0xFFCCCCCC;
             drawText(context, suggestionList.get(i), sugX + 6, itemY + 2, textColor);
 
             if (isSelected) {
                 int tabW = this.font.width("[Tab]");
-                drawText(context, "[Tab]", sugX + sugW - tabW - 4, itemY + 2, 0xFF888888);
+                drawText(context, "[Tab]", sugX + sugW - tabW - 4, itemY + 2, VanillaStyle.MUTED_COLOR);
             }
         }
     }
@@ -305,7 +305,7 @@ public class EditWaypointScreen extends Screen {
      */
     private void renderGroupCycler(GuiGraphicsExtractor context, int mouseX, int mouseY) {
         // 背景框
-        fillRoundedRect(context, cyclerX, cyclerY, cyclerWidth, CYCLER_HEIGHT, 0xFF1E1E2E);
+        context.fill( cyclerX, cyclerY, cyclerWidth, CYCLER_HEIGHT, VanillaStyle.SLOT_COLOR);
 
         if (allGroups.isEmpty()) {
             drawText(context, "无分组", cyclerX + cyclerWidth / 2 - 15, cyclerY + 4, SUBTLE_COLOR);
@@ -348,8 +348,8 @@ public class EditWaypointScreen extends Screen {
             boolean isSelected = colors[i] == selectedColor;
 
             // 背景
-            int bgColor = isHovered ? HOVER_COLOR : 0xFF1E1E2E;
-            fillRoundedRect(context, x, y, COLOR_SIZE, COLOR_SIZE, bgColor);
+            int bgColor = isHovered ? HOVER_COLOR : VanillaStyle.SLOT_COLOR;
+            context.fill( x, y, COLOR_SIZE, COLOR_SIZE, bgColor);
 
             // 颜色方块（居中，留边距）
             int innerSize = COLOR_SIZE - 6;
@@ -542,7 +542,7 @@ public class EditWaypointScreen extends Screen {
      * 自动确认勾选框颜色
      */
     private int getAutoConfirmColor() {
-        return autoConfirmState == 0 ? 0xFF888888 : 0xFF4ADE80;
+        return autoConfirmState == 0 ? VanillaStyle.MUTED_COLOR : VanillaStyle.SUCCESS_COLOR;
     }
 
     /**
@@ -598,11 +598,6 @@ public class EditWaypointScreen extends Screen {
 
     // ==================== 绘制工具方法 ====================
 
-    private void fillRoundedRect(GuiGraphicsExtractor context, int x, int y, int width, int height, int color) {
-        context.fill(x + 2, y, x + width - 2, y + height, color);
-        context.fill(x, y + 2, x + width, y + height - 2, color);
-    }
-
     private void drawBorder(GuiGraphicsExtractor context, int x, int y, int width, int height, int color) {
         context.fill(x, y, x + width, y + 2, color);
         context.fill(x, y + height - 2, x + width, y + height, color);
@@ -611,12 +606,12 @@ public class EditWaypointScreen extends Screen {
     }
 
     private void drawText(GuiGraphicsExtractor context, String text, int x, int y, int color) {
-        context.text(this.font, text, x, y, color);
+        context.text(this.font, text, x, y, color, false);
     }
 
     private void drawCenteredText(GuiGraphicsExtractor context, String text, int centerX, int y, int color) {
         int textWidth = this.font.width(text);
-        context.text(this.font, text, centerX - textWidth / 2, y, color);
+        context.text(this.font, text, centerX - textWidth / 2, y, color, false);
     }
 
     @Override

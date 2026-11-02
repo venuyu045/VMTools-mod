@@ -108,6 +108,35 @@
 | 输入层 | GLFW | GLFW | GLFW | SDL |
 | Mixin | 0.8.7 | 0.8.7 | 0.8.7 | 0.8.7 |
 
+## 界面风格
+
+界面统一用 **Minecraft 原版容器风格**（物品栏 / 箱子那种）：浅灰面板 `#C6C6C6` +
+黑外框 + 白高光 + 深灰阴影 + 像素圆角，列表区是凹陷的物品格，按钮和输入框直接用原版
+`widget/button.png` / `widget/text_field.png` 九宫格精灵图。
+
+配色不是"看着像"，是从客户端 jar 的 `assets/minecraft/textures/gui/container/inventory.png`
+里**逐像素量出来**的（见 `gui/VanillaStyle.java` 的注释）。浅色底上的文字一律不带阴影 ——
+原版阴影色是"颜色除以 4"，深灰字的阴影接近纯黑，压在浅灰面板上会糊成脏边。
+
+## 开发
+
+### UI 预览器（`tools/uipreview/`）
+
+不用启动游戏、不用显卡就能把界面渲染成 PNG，并且能在浏览器里**真的点**：
+
+```bash
+bash tools/uipreview/run.sh --all --report   # 所有场景出图 + 布局自检
+bash tools/uipreview/serve.sh                # http://127.0.0.1:8765/ 交互
+```
+
+原理：MC 26.x 是提取式渲染（`extractRenderState` 只往渲染状态写命令、不碰 GL），
+把 `GuiGraphicsExtractor` 换成录制器，产出命令列表后用 Java2D 重放成图。
+**生产代码一行不用改**，布局和绘制全部由界面自己算，所以预览图上的坐标就是游戏里的坐标。
+
+改界面时：改一行 → 重跑 `run.sh` → 看图。比开游戏快两个数量级。
+
+移植到别的项目见 [`tools/uipreview/PORTING.md`](tools/uipreview/PORTING.md)。
+
 ## 许可证
 
 MIT License
